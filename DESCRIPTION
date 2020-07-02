@@ -1,0 +1,26 @@
+Type: Package
+Package: SAXGAP
+Title: Gap Filling Algorithm based on the Symbol Aggregate approXimation
+Version: 0.1.0
+Date: 2020-07-01
+Authors@R: c(person(given = "Erik", family = "Mueller", role = c("aut",
+        "cre"), email = "erik.mueller@ufz.de"), person(given =
+        "Carolin", family = "Huber", role = "aut", email =
+        "carolin-elisabeth.huber@ufz.de"), person(given = "Martin", family = "Krauss", role = "aut", email
+        = "martin.krauss@ufz.de"), person(given = "Tobias", family = "Schulze", role = c("aut",
+        "ths"), email = "tobias.schulze@ufz.de"))
+Author: Erik Mueller, Carolin Huber, Martin Krauss, Tobias Schulze
+Maintainer: Erik Mueller <erik.mueller@ufz.de>
+Description: This package mainly contains a function to fill gaps in MS data utilizing the SAX (Symbol Aggregate approXimation) algorithm.
+License: 
+BugReports: https://github.com/ermueller/SAXGAP/issues
+Depends: R(>= 3.0.1)
+Imports: data.table, xcms, progress, tools
+Suggests: 
+VignetteBuilder: knitr
+Encoding: UTF-8
+RoxygenNote: 7.1.0
+Collate: 
+    'Gap_filling.R'
+    'Helper_methods.R'
+    'SAX_functions.R'
