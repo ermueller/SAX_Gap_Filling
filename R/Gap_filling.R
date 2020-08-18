@@ -46,58 +46,67 @@ SAXGAP <- function(peak_table, mzML_filenames, SAXGAP_params = list(a=6,w=6,t=14
     
     # Parameter check and read section
 
-        # Check the peak_table parameter
-        # Is it a filepath? If it is, read the file
-        if(is.character(peak_table)){
-            if(file.exists(peak_table)){
-                peak_table <- fread(peak_table)
-            } else{
-                stop(paste("File",peak_table,"does not exist"))
-            }
+    # Check the peak_table parameter
+    # Is it a filepath? If it is, read the file
+    if(is.character(peak_table)){
+        if(file.exists(peak_table)){
+            peak_table <- fread(peak_table)
         } else{
-            if(!is.data.table(peak_table)){
-                stop("peak_table must be an object of class data.table")
+            stop(paste("File",peak_table,"does not exist"))
+        }
+    } else{
+        if(!is.data.table(peak_table)){
+            stop("peak_table must be an object of class data.table")
+        }
+    }
+    
+    # Check the mzML_filenames parameter
+    # Do all filenames exist?
+    if(is.character(mzML_filenames)){
+        mzML_filenames_exist <- file.exists(mzML_filenames)
+        
+        if(!all(mzML_filenames_exist)){
+            not_existing_mzML_files <- mzML_filenames[!mzML_filenames_exist]
+            if(length(not_existing_mzML_files) == 1){
+                stop(paste0("File does not exist:\n", not_existing_mzML_files))
             }
-        }
-        
-        # Check the mzML_filenames parameter
-        # Do all filenames exist?
-        if(is.character(mzML_filenames)){
-            mzML_filenames_exist <- file.exists(mzML_filenames)
-            
-            if(!all(mzML_filenames_exist)){
-                not_existing_mzML_files <- mzML_filenames[!mzML_filenames_exist]
-                if(length(not_existing_mzML_files) == 1){
-                    stop(paste0("File does not exist:\n", not_existing_mzML_files))
-                }
-                if(length(not_existing_mzML_files) > 1){
-                    stop(paste0("Files do not exist:\n", paste(not_existing_mzML_files,collapse = "\n")))
-                }
-            } 
-            
-        } else{
-            stop("mzML_filenames must be a character vector containg filenames")
-        }
-        
-        # Check the SAXGAP_params parameter
-        # Is SAXGAP_params a list with the proper named elements?
-        
-        if(!is.list(SAXGAP_params) || !all(c("a","w","t","pe","intensity_threshold","dppm") %in% names(SAXGAP_params))){
-            stop("SAXGAP_params must be a list containing named elements \"a\",\"w\",\"t\",\"pe\",\"intensity_threshold\",\"dppm\"")
-        }
-        
-        # Check the output_file parameter (if it is supplied)
-        # Does the folder exist where the table should go?
-        if(!missing(output_file)){
-            dirname_output_file <- dirname(output_file)
-            if(!dir.exists(dirname_output_file)){
-                stop(paste("The target directory of the output file", dirname_output_file, "does not exist"))
+            if(length(not_existing_mzML_files) > 1){
+                stop(paste0("Files do not exist:\n", paste(not_existing_mzML_files,collapse = "\n")))
             }
+        } 
+        
+    } else{
+        stop("mzML_filenames must be a character vector containg filenames")
+    }
+    
+    # Check the SAXGAP_params parameter
+    # Is SAXGAP_params a list with the proper named elements?
+    
+    if(!is.list(SAXGAP_params) || !all(c("a","w","t","pe","intensity_threshold","dppm") %in% names(SAXGAP_params))){
+        stop("SAXGAP_params must be a list containing named elements \"a\",\"w\",\"t\",\"pe\",\"intensity_threshold\",\"dppm\"")
+    }
+    
+    # Check the output_file parameter (if it is supplied)
+    # Does the folder exist where the table should go?
+    if(!missing(output_file)){
+        dirname_output_file <- dirname(output_file)
+        if(!dir.exists(dirname_output_file)){
+            stop(paste("The target directory of the output file", dirname_output_file, "does not exist"))
         }
+    }
     
     # Get intensity and rt column names
     INT_column_names  <- paste0("Intensity_",file_path_sans_ext(basename(mzML_filenames)))
     RT_column_names   <- paste0("RT_",file_path_sans_ext(basename(mzML_filenames)))
+    
+    # Replace NAs by 0s
+    if(any(is.na(peak_table))){
+        for(i in names(peak_table)){
+            peak_table[is.na(get(i)), (i):=0]
+        }
+        message("Info: Replacing NAs by 0 in the peak table")
+    }
+    
     
     # If the column names are not found in the table check if they are found if we don't remove the file extension from the name
     # It's easy to check this, so we allow this with file extensions and without, for user convenience.
@@ -151,7 +160,7 @@ SAXGAP <- function(peak_table, mzML_filenames, SAXGAP_params = list(a=6,w=6,t=14
     # progress_bar stuff
     length_progressbar <- length(mzML_filenames)*nPeaks
     pb <- progress_bar$new(
-        format = " [NonTplus] Generating SAX sequences    [:bar] :percent ETA: :eta Elapsed: :elapsed ",
+        format = "Generating SAX sequences    [:bar] :percent ETA: :eta Elapsed: :elapsed ",
         total = length_progressbar, clear = FALSE, width = 80)
     
     # Variable setup, create new data.tables and EIClengths
@@ -260,7 +269,7 @@ SAXGAP <- function(peak_table, mzML_filenames, SAXGAP_params = list(a=6,w=6,t=14
     consensus_majority <- list()
     length_progressbar <- nPeaks
     pb <- progress_bar$new(
-        format = " [NonTplus] Finding consensus sequences [:bar] :percent ETA: :eta Elapsed: :elapsed",
+        format = "Finding consensus sequences [:bar] :percent ETA: :eta Elapsed: :elapsed",
         total = length_progressbar, clear = FALSE, width = 80)
     
     # Go through each peak
@@ -306,7 +315,7 @@ SAXGAP <- function(peak_table, mzML_filenames, SAXGAP_params = list(a=6,w=6,t=14
     single_score_mats <- list()
     length_progressbar <- nrow(INT_Table)
     pb <- progress_bar$new(
-        format = " [NonTplus] Adding new peaks            [:bar] :percent ETA: :eta Elapsed: :elapsed",
+        format = "Adding new peaks            [:bar] :percent ETA: :eta Elapsed: :elapsed",
         total = length_progressbar, clear = FALSE, width = 80)
     
     # Classification loop
